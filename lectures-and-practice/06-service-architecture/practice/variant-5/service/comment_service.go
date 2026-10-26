@@ -35,12 +35,11 @@ func (s *CommentService) Create(ctx context.Context, authorID int64, text string
 		return nil, err
 	}
 
-	comment.ApplyModeration(author, s.checkToxicity(ctx, text))
-
-	if err := s.comments.Create(ctx, comment); err != nil {
+	if err := comment.ApplyModeration(author, s.checkToxicity(ctx, text)); err != nil {
 		return nil, err
 	}
-	return comment, nil
+
+	return s.comments.Create(ctx, comment)
 }
 
 func (s *CommentService) Get(ctx context.Context, id int64) (*domain.Comment, error) {
@@ -61,7 +60,9 @@ func (s *CommentService) EditText(ctx context.Context, id int64, text string) (*
 		return nil, err
 	}
 	if needsRecheck {
-		comment.ApplyEditCheck(s.checkToxicity(ctx, text))
+		if err := comment.ApplyEditCheck(s.checkToxicity(ctx, text)); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.comments.Update(ctx, comment); err != nil {

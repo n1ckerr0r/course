@@ -22,11 +22,11 @@ const (
 )
 
 type Comment struct {
-	ID        int64
-	AuthorID  int64
-	Text      string
-	Status    Status
-	CreatedAt time.Time
+	id        int64
+	authorID  int64
+	text      string
+	status    Status
+	createdAt time.Time
 }
 
 func ValidateText(text string) error {
@@ -41,37 +41,55 @@ func NewComment(authorID int64, text string) (*Comment, error) {
 		return nil, err
 	}
 	return &Comment{
-		AuthorID:  authorID,
-		Text:      text,
-		Status:    StatusPending,
-		CreatedAt: time.Now(),
+		authorID:  authorID,
+		text:      text,
+		status:    StatusPending,
+		createdAt: time.Now(),
 	}, nil
 }
 
-func (c *Comment) ApplyModeration(author Author, t Toxicity) {
+func RestoreComment(id, authorID int64, text string, status Status, createdAt time.Time) *Comment {
+	return &Comment{id: id, authorID: authorID, text: text, status: status, createdAt: createdAt}
+}
+
+func (c *Comment) ID() int64            { return c.id }
+func (c *Comment) AuthorID() int64      { return c.authorID }
+func (c *Comment) Text() string         { return c.text }
+func (c *Comment) Status() Status       { return c.status }
+func (c *Comment) CreatedAt() time.Time { return c.createdAt }
+
+func (c *Comment) ApplyModeration(author Author, t Toxicity) error {
+	if c.status != StatusPending {
+		return ErrInvalidTransition
+	}
 	switch t {
 	case ToxicityToxic:
-		c.Status = StatusHidden
+		c.status = StatusHidden
 	case ToxicityClean:
 		if author.CanSkipManualModeration() {
-			c.Status = StatusPublished
+			c.status = StatusPublished
 		}
 	}
+	return nil
 }
 
 func (c *Comment) ChangeText(text string) (needsRecheck bool, err error) {
 	if err := ValidateText(text); err != nil {
 		return false, err
 	}
-	if c.Status == StatusHidden {
+	if c.status == StatusHidden {
 		return false, ErrHiddenComment
 	}
-	c.Text = text
-	return c.Status == StatusPublished, nil
+	c.text = text
+	return c.status == StatusPublished, nil
 }
 
-func (c *Comment) ApplyEditCheck(t Toxicity) {
-	if c.Status == StatusPublished && t != ToxicityClean {
-		c.Status = StatusPending
+func (c *Comment) ApplyEditCheck(t Toxicity) error {
+	if c.status != StatusPublished {
+		return ErrInvalidTransition
 	}
+	if t != ToxicityClean {
+		c.status = StatusPending
+	}
+	return nil
 }

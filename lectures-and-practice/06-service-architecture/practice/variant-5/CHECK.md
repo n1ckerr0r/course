@@ -21,7 +21,7 @@
 ## По пяти пунктам
 
 1. **Слои** - handler → service → domain; repository/adapter реализуют порты service. Граница видна по импортам (domain ничего не импортирует из проекта).
-2. **Богатые модели** - статус меняется только методами `Comment`; типизированный `Status`; откат `published → pending` в `ApplyEditCheck`.
+2. **Богатые модели** - поля `Comment` и `Author` приватные (геттеры + `RestoreComment`/`RestoreAuthor` для репозитория); статус меняется только методами, каждый переход проверяет исходный статус (`ErrInvalidTransition`): `ApplyModeration` - только из pending, `ApplyEditCheck` (откат `published → pending`) - только из published, `ChangeText` - не из hidden.
 3. **Ошибки по слоям** - `domain.Err*`; `sql.ErrNoRows` и `findByID` убраны, репозиторий отдаёт `domain.ErrNotFound`; перевод в 400/404/409 - в `writeError`.
 4. **Порты и адаптеры** - 4 интерфейса. Разная семантика отказа видна в сервисе: ошибка спам-фильтра игнорируется (fail-open, `Create`), ошибка токсичности превращается в `domain.ToxicityUnknown` (fail-safe, `checkToxicity`). Адаптеры только возвращают ошибку сети.
 5. **DDD** - доменная `Comment` отдельно от `commentRecord` в repository; `Author`/`Reputation` - отдельный контекст за `AuthorRepository`, участвует в `ApplyModeration(author, toxicity)`.

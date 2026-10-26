@@ -58,8 +58,8 @@ func TestCreate(t *testing.T) {
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
-			if err == nil && c.Status != tt.want {
-				t.Fatalf("status = %s, want %s", c.Status, tt.want)
+			if err == nil && c.Status() != tt.want {
+				t.Fatalf("status = %s, want %s", c.Status(), tt.want)
 			}
 		})
 	}
@@ -92,11 +92,11 @@ func TestEditText(t *testing.T) {
 				t.Fatal(err)
 			}
 			tox.toxic, tox.err = tt.edit.toxic, tt.edit.err
-			got, err := svc.EditText(ctx, c.ID, tt.text)
+			got, err := svc.EditText(ctx, c.ID(), tt.text)
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
-			if err == nil && (got.Status != tt.want || got.Text != tt.text) {
+			if err == nil && (got.Status() != tt.want || got.Text() != tt.text) {
 				t.Fatalf("got %+v", got)
 			}
 		})

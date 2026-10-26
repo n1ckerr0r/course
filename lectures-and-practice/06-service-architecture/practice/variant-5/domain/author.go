@@ -8,14 +8,22 @@ const (
 )
 
 type Author struct {
-	ID         int64
-	Reputation Reputation
+	id         int64
+	reputation Reputation
 }
 
 func NewAuthor(id int64) Author {
-	return Author{ID: id, Reputation: ReputationNew}
+	return Author{id: id, reputation: ReputationNew}
 }
 
+func RestoreAuthor(id int64, reputation Reputation) Author {
+	return Author{id: id, reputation: reputation}
+}
+
+func (a Author) ID() int64 { return a.id }
+
+func (a Author) Reputation() Reputation { return a.reputation }
+
 func (a Author) CanSkipManualModeration() bool {
-	return a.Reputation == ReputationTrusted
+	return a.reputation == ReputationTrusted
 }

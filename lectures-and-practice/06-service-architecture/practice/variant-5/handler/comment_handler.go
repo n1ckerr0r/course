@@ -45,7 +45,7 @@ type commentResponse struct {
 }
 
 func toResponse(c *domain.Comment) commentResponse {
-	return commentResponse{c.ID, c.AuthorID, c.Text, string(c.Status), c.CreatedAt}
+	return commentResponse{c.ID(), c.AuthorID(), c.Text(), string(c.Status()), c.CreatedAt()}
 }
 
 func (h *CommentHandler) create(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func (h *CommentHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]any{"id": c.ID, "status": c.Status})
+	json.NewEncoder(w).Encode(map[string]any{"id": c.ID(), "status": c.Status()})
 }
 
 func (h *CommentHandler) get(w http.ResponseWriter, r *http.Request) {

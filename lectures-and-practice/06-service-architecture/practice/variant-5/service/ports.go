@@ -7,7 +7,7 @@ import (
 )
 
 type CommentRepository interface {
-	Create(ctx context.Context, c *domain.Comment) error
+	Create(ctx context.Context, c *domain.Comment) (*domain.Comment, error)
 	Get(ctx context.Context, id int64) (*domain.Comment, error)
 	Update(ctx context.Context, c *domain.Comment) error
 }

@@ -16,15 +16,12 @@ type commentRecord struct {
 	CreatedAt time.Time
 }
 
-func toRecord(c *domain.Comment) commentRecord {
-	return commentRecord{c.ID, c.AuthorID, c.Text, string(c.Status), c.CreatedAt}
+func toRecord(id int64, c *domain.Comment) commentRecord {
+	return commentRecord{id, c.AuthorID(), c.Text(), string(c.Status()), c.CreatedAt()}
 }
 
 func (r commentRecord) toDomain() *domain.Comment {
-	return &domain.Comment{
-		ID: r.ID, AuthorID: r.AuthorID, Text: r.Text,
-		Status: domain.Status(r.Status), CreatedAt: r.CreatedAt,
-	}
+	return domain.RestoreComment(r.ID, r.AuthorID, r.Text, domain.Status(r.Status), r.CreatedAt)
 }
 
 type MemoryCommentRepository struct {
@@ -37,13 +34,13 @@ func NewMemoryCommentRepository() *MemoryCommentRepository {
 	return &MemoryCommentRepository{rows: map[int64]commentRecord{}}
 }
 
-func (r *MemoryCommentRepository) Create(_ context.Context, c *domain.Comment) error {
+func (r *MemoryCommentRepository) Create(_ context.Context, c *domain.Comment) (*domain.Comment, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.nextID++
-	c.ID = r.nextID
-	r.rows[c.ID] = toRecord(c)
-	return nil
+	row := toRecord(r.nextID, c)
+	r.rows[row.ID] = row
+	return row.toDomain(), nil
 }
 
 func (r *MemoryCommentRepository) Get(_ context.Context, id int64) (*domain.Comment, error) {
@@ -59,10 +56,10 @@ func (r *MemoryCommentRepository) Get(_ context.Context, id int64) (*domain.Comm
 func (r *MemoryCommentRepository) Update(_ context.Context, c *domain.Comment) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if _, ok := r.rows[c.ID]; !ok {
+	if _, ok := r.rows[c.ID()]; !ok {
 		return domain.ErrNotFound
 	}
-	r.rows[c.ID] = toRecord(c)
+	r.rows[c.ID()] = toRecord(c.ID(), c)
 	return nil
 }
 
@@ -87,5 +84,5 @@ func (r *MemoryAuthorRepository) Get(_ context.Context, id int64) (domain.Author
 	if !ok {
 		return domain.Author{}, domain.ErrNotFound
 	}
-	return domain.Author{ID: row.ID, Reputation: domain.Reputation(row.Reputation)}, nil
+	return domain.RestoreAuthor(row.ID, domain.Reputation(row.Reputation)), nil
 }
